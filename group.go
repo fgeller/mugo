@@ -10,7 +10,8 @@ import (
 
 type group struct {
 	Name            string
-	Path            string
+	GroupDirectory  string
+	RelativeLink    string
 	RenderedEntries []*entry
 	Entries         []*entry
 }
@@ -29,7 +30,7 @@ func (g *group) renderIndex() error {
 		return fmt.Errorf("failed to execute group index template: %w", err)
 	}
 
-	fp := filepath.Join(g.Path, "index.html")
+	fp := filepath.Join(g.GroupDirectory, "index.html")
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write group index file: %w", err)

@@ -54,7 +54,8 @@ func (l *log) findTags() error {
 			} else {
 				td := &tag{
 					Name:            t,
-					Path:            filepath.Base(l.BaseDirectory),
+					RelativeLink:    filepath.Base(l.BaseDirectory),
+					TagDirectory:    l.BaseDirectory,
 					Entries:         []*entry{e},
 					RenderedEntries: []*entry{},
 				}
@@ -84,12 +85,14 @@ func (l *log) findGroups() error {
 		gn := filepath.Base(gp)
 
 		pth := filepath.Join(filepath.Base(l.BaseDirectory), gn)
+		fp := filepath.Join(l.BaseDirectory, gn)
 
 		_, ok := l.Groups[gn]
 		if !ok {
 			g := &group{
 				Name:            gn,
-				Path:            pth,
+				GroupDirectory:  fp,
+				RelativeLink:    pth,
 				Entries:         []*entry{e},
 				RenderedEntries: []*entry{},
 			}
@@ -144,14 +147,16 @@ func (l *log) findEntries() error {
 	walker := func(pth string, info os.FileInfo, err error) error {
 		if filepath.Ext(info.Name()) == ".md" {
 			e := entry{
-				MDPath:   pth,
-				HTMLPath: htmlPath(pth),
+				MDFile:   pth,
+				HTMLFile: htmlPath(pth),
 			}
 			l.Entries = append(l.Entries, &e)
 		}
 		return err
 	}
-	return filepath.Walk(l.BaseDirectory, walker)
+	err := filepath.Walk(l.BaseDirectory, walker)
+	verbose("walked base-dir %#v and found %v entries.", l.BaseDirectory, len(l.Entries))
+	return err
 }
 
 func (l *log) renderEntries() error {

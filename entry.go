@@ -14,8 +14,8 @@ import (
 )
 
 type entry struct {
-	MDPath   string
-	HTMLPath string
+	MDFile   string
+	HTMLFile string
 
 	Title   string
 	Date    time.Time
@@ -54,7 +54,7 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 }
 
 func (e *entry) groupPath() string {
-	return filepath.Dir(filepath.Dir(e.MDPath))
+	return filepath.Dir(filepath.Dir(e.MDFile))
 }
 
 func (e *entry) Group() string {
@@ -62,15 +62,15 @@ func (e *entry) Group() string {
 }
 
 func (e *entry) GroupToEntryPath() string {
-	date := filepath.Base(filepath.Dir(e.HTMLPath))
-	fn := filepath.Base(e.HTMLPath)
+	date := filepath.Base(filepath.Dir(e.HTMLFile))
+	fn := filepath.Base(e.HTMLFile)
 	return filepath.Join(date, fn)
 }
 
 func (e *entry) MainToEntryPath() string {
-	group := filepath.Base(filepath.Dir(filepath.Dir(e.HTMLPath)))
-	date := filepath.Base(filepath.Dir(e.HTMLPath))
-	fn := filepath.Base(e.HTMLPath)
+	group := filepath.Base(filepath.Dir(filepath.Dir(e.HTMLFile)))
+	date := filepath.Base(filepath.Dir(e.HTMLFile))
+	fn := filepath.Base(e.HTMLFile)
 	return filepath.Join(group, date, fn)
 }
 
@@ -79,7 +79,7 @@ func (e *entry) render() error {
 	ctx := parser.NewContext()
 	var buf bytes.Buffer
 
-	src, err := ioutil.ReadFile(e.MDPath)
+	src, err := ioutil.ReadFile(e.MDFile)
 	if err != nil {
 		return err
 	}
@@ -107,10 +107,13 @@ func (e *entry) render() error {
 	}
 
 	if !e.IsDraft {
-		err = ioutil.WriteFile(e.HTMLPath, buf.Bytes(), 0777)
+		err = ioutil.WriteFile(e.HTMLFile, buf.Bytes(), 0777)
 		if err != nil {
 			return err
 		}
+		verbose("rendered entry %#v to %#v.", e.Title, e.HTMLFile)
+	} else {
+		verbose("rendered entry draft %#v in memory.", e.Title)
 	}
 
 	return nil

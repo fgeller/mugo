@@ -18,7 +18,9 @@ func measure(f func() error, eh func(error), mf string, args ...interface{}) {
 }
 
 func fail(err error) {
-	panic(err)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func htmlPath(md string) string {
