@@ -60,6 +60,7 @@ func (l *log) findTags() error {
 					TagDirectory:    l.BaseDirectory,
 					Entries:         []*entry{e},
 					RenderedEntries: []*entry{},
+					Log:             l,
 					template:        l.templates.Tags,
 				}
 				l.Tags[t] = td
@@ -104,6 +105,7 @@ func (l *log) findGroups() error {
 				RelativeLink:    pth,
 				Entries:         []*entry{e},
 				RenderedEntries: []*entry{},
+				Log:             l,
 				template:        l.templates.Group,
 			}
 			l.Groups[gn] = g
@@ -168,6 +170,7 @@ func (l *log) findEntries() error {
 			e := &entry{
 				MDFile:   pth,
 				HTMLFile: htmlPath(pth),
+				Log:      l,
 				template: l.templates.Entry,
 			}
 			l.Entries = append(l.Entries, e)

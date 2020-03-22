@@ -193,7 +193,7 @@ var tmplGroup = `
 
     <footer>
       <div>
-        <a href="../index.html">log</a> /
+        <a href="../index.html">{{ .Log.Title }}</a> /
         {{ .Name }}
       </div>
       <div>
@@ -244,7 +244,7 @@ var tmplTags = `
 
     <footer>
       <div>
-        <a href="index.html">log</a> /
+        <a href="index.html">{{ .Log.Title }}</a> /
         {{ .Name }}
       </div>
       <div>
@@ -276,7 +276,7 @@ var tmplEntry = `
 
     <footer>
       <div>
-        <a href="../../index.html">log</a> /
+        <a href="../../index.html">{{ .Log.Title }}</a> /
         <a href="../index.html">{{ .Group }}</a> /
         {{ .Title }}
       </div>

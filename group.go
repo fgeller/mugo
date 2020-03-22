@@ -14,6 +14,7 @@ type group struct {
 	RelativeLink    string
 	RenderedEntries []*entry
 	Entries         []*entry
+	Log             *log
 	template        *template.Template
 }
 

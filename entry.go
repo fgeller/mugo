@@ -26,6 +26,7 @@ type entry struct {
 
 	RenderedHTML string
 
+	Log      *log
 	template *template.Template
 }
 

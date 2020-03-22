@@ -14,6 +14,7 @@ type tag struct {
 	TagDirectory    string
 	RenderedEntries []*entry
 	Entries         []*entry
+	Log             *log
 	template        *template.Template
 }
 
