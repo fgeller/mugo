@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"text/template"
 )
 
 type log struct {
@@ -17,9 +16,11 @@ type log struct {
 	RenderedEntries []*entry
 	Groups          map[string]*group
 	Tags            map[string]*tag
+
+	templates *templates
 }
 
-func newLog(title string, baseDir string) *log {
+func newLog(title string, baseDir string, templates *templates) *log {
 	lg := &log{
 		Title:           title,
 		BaseDirectory:   baseDir,
@@ -27,6 +28,7 @@ func newLog(title string, baseDir string) *log {
 		RenderedEntries: []*entry{},
 		Groups:          map[string]*group{},
 		Tags:            map[string]*tag{},
+		templates:       templates,
 	}
 	return lg
 }
@@ -58,6 +60,7 @@ func (l *log) findTags() error {
 					TagDirectory:    l.BaseDirectory,
 					Entries:         []*entry{e},
 					RenderedEntries: []*entry{},
+					template:        l.templates.Tags,
 				}
 				l.Tags[t] = td
 			}
@@ -101,6 +104,7 @@ func (l *log) findGroups() error {
 				RelativeLink:    pth,
 				Entries:         []*entry{e},
 				RenderedEntries: []*entry{},
+				template:        l.templates.Group,
 			}
 			l.Groups[gn] = g
 		} else {
@@ -135,12 +139,7 @@ func (l *log) renderMainIndex() error {
 	var err error
 	var buf bytes.Buffer
 
-	t, err := template.New("main-index").Funcs(template.FuncMap{"FormatDate": FormatDate}).Parse(tmplMain)
-	if err != nil {
-		return fmt.Errorf("failed to parse main index template: %w", err)
-	}
-
-	err = t.ExecuteTemplate(&buf, "main-index", l)
+	err = l.templates.Main.ExecuteTemplate(&buf, "main", l)
 	if err != nil {
 		return fmt.Errorf("failed to execute main index template: %w", err)
 	}
@@ -166,11 +165,12 @@ func (l *log) LatestRenderedEntry() *entry {
 func (l *log) findEntries() error {
 	walker := func(pth string, info os.FileInfo, err error) error {
 		if filepath.Ext(info.Name()) == ".md" {
-			e := entry{
+			e := &entry{
 				MDFile:   pth,
 				HTMLFile: htmlPath(pth),
+				template: l.templates.Entry,
 			}
-			l.Entries = append(l.Entries, &e)
+			l.Entries = append(l.Entries, e)
 		}
 		return err
 	}

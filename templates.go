@@ -1,17 +1,74 @@
 package main
 
+import (
+	"fmt"
+	"io/ioutil"
+	"text/template"
+)
+
+type templates struct {
+	Main  *template.Template
+	Group *template.Template
+	Tags  *template.Template
+	Entry *template.Template
+}
+
+func createTemplate(name, file, fallback string) (*template.Template, error) {
+	var raw string
+	funcs := template.FuncMap{"FormatDate": FormatDate}
+	if file == "" {
+		raw = fallback
+		verbose("template %#v uses fallback rather than file: %#v", name, file)
+	} else {
+		byt, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read %v template: %w", name, err)
+		}
+		raw = string(byt)
+		verbose("template %#v uses source from file %#v", name, file)
+	}
+	return template.New(name).Funcs(funcs).Parse(raw)
+}
+
+func readTemplates(args *arguments) (*templates, error) {
+	var err error
+	result := &templates{}
+
+	result.Main, err = createTemplate("main", args.MainTemplate, tmplMain)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse main template: %w", err)
+	}
+
+	result.Group, err = createTemplate("group", args.GroupTemplate, tmplGroup)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse group template: %w", err)
+	}
+
+	result.Tags, err = createTemplate("tags", args.TagsTemplate, tmplTags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse tags template: %w", err)
+	}
+
+	result.Entry, err = createTemplate("entry", args.EntryTemplate, tmplEntry)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse entry template: %w", err)
+	}
+
+	return result, nil
+}
+
 var tmplMain = `
 <!doctype html>
 <html>
 <meta charset="UTF-8">
   <head>
-    <title>log</title>
+    <title>{{ .Title }}</title>
     <link rel="stylesheet" type="text/css" href="style.css">
   </head>
 
   <body>
-
     <section class="main">
+      <h1>{{ .Title }}</h1>
       <h2>latest entry</h2>
       <article>
       <div>

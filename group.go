@@ -14,18 +14,14 @@ type group struct {
 	RelativeLink    string
 	RenderedEntries []*entry
 	Entries         []*entry
+	template        *template.Template
 }
 
 func (g *group) renderIndex() error {
 	var err error
 	var buf bytes.Buffer
 
-	t, err := template.New("group-index").Funcs(template.FuncMap{"FormatDate": FormatDate}).Parse(tmplGroup)
-	if err != nil {
-		return fmt.Errorf("failed to parse group index template: %w", err)
-	}
-
-	err = t.ExecuteTemplate(&buf, "group-index", g)
+	err = g.template.ExecuteTemplate(&buf, "group", g)
 	if err != nil {
 		return fmt.Errorf("failed to execute group index template: %w", err)
 	}

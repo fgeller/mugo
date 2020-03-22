@@ -25,6 +25,8 @@ type entry struct {
 	IsDraft bool
 
 	RenderedHTML string
+
+	template *template.Template
 }
 
 func (e *entry) parseHeader(ctx parser.Context) error {
@@ -99,13 +101,8 @@ func (e *entry) render() error {
 		return fmt.Errorf("failed to parse header: %w", err)
 	}
 
-	t, err := template.New("log-entry").Funcs(template.FuncMap{"FormatDate": FormatDate}).Parse(tmplEntry)
-	if err != nil {
-		return fmt.Errorf("failed to parse entry template: %w", err)
-	}
-
 	buf.Reset()
-	err = t.ExecuteTemplate(&buf, "log-entry", e)
+	err = e.template.ExecuteTemplate(&buf, "entry", e)
 	if err != nil {
 		return fmt.Errorf("failed to execute entry template: %w", err)
 	}
