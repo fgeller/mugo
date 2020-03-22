@@ -20,7 +20,7 @@ func (g *group) renderIndex() error {
 	var err error
 	var buf bytes.Buffer
 
-	t, err := template.New("group-index").Parse(tmplGroup)
+	t, err := template.New("group-index").Funcs(template.FuncMap{"FormatDate": FormatDate}).Parse(tmplGroup)
 	if err != nil {
 		return fmt.Errorf("failed to parse group index template: %w", err)
 	}

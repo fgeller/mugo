@@ -6,7 +6,9 @@ import (
 	"os"
 )
 
+// TODO: templates from flags
 // TODO: rss
+// TODO: fsnotify regenerate dir
 
 func main() {
 	var err error

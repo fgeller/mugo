@@ -66,6 +66,12 @@ func (l *log) findTags() error {
 			}
 		}
 	}
+
+	for _, t := range l.Tags {
+		sortByDate(t.Entries)
+		sortByDate(t.RenderedEntries)
+	}
+
 	return nil
 }
 
@@ -106,6 +112,12 @@ func (l *log) findGroups() error {
 		}
 
 	}
+
+	for _, g := range l.Groups {
+		sortByDate(g.Entries)
+		sortByDate(g.RenderedEntries)
+	}
+
 	return nil
 }
 
@@ -123,7 +135,7 @@ func (l *log) renderMainIndex() error {
 	var err error
 	var buf bytes.Buffer
 
-	t, err := template.New("main-index").Parse(tmplMain)
+	t, err := template.New("main-index").Funcs(template.FuncMap{"FormatDate": FormatDate}).Parse(tmplMain)
 	if err != nil {
 		return fmt.Errorf("failed to parse main index template: %w", err)
 	}
@@ -141,6 +153,14 @@ func (l *log) renderMainIndex() error {
 	verbose("rendered main index.")
 
 	return nil
+}
+
+func (l *log) LatestRenderedEntry() *entry {
+	if len(l.RenderedEntries) == 0 {
+		return nil
+	} else {
+		return l.RenderedEntries[0]
+	}
 }
 
 func (l *log) findEntries() error {
@@ -169,5 +189,7 @@ func (l *log) renderEntries() error {
 			l.RenderedEntries = append(l.RenderedEntries, e)
 		}
 	}
+	sortByDate(l.Entries)
+	sortByDate(l.RenderedEntries)
 	return nil
 }

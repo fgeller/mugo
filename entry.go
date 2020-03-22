@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"sort"
 	"text/template"
 	"time"
 
@@ -40,12 +41,15 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 	}
 
 	e.Tags = []string{}
-	raw := header["tags"].([]interface{})
+	raw, ok := header["tags"].([]interface{})
+	if !ok {
+		return fmt.Errorf("tags are not passed as array of strings: %w", err)
+	}
 	for _, t := range raw {
 		e.Tags = append(e.Tags, t.(string))
 	}
 
-	_, ok := header["draft"].(bool)
+	_, ok = header["draft"].(bool)
 	if ok {
 		e.IsDraft = header["draft"].(bool)
 	}
@@ -95,7 +99,7 @@ func (e *entry) render() error {
 		return fmt.Errorf("failed to parse header: %w", err)
 	}
 
-	t, err := template.New("log-entry").Parse(tmplEntry)
+	t, err := template.New("log-entry").Funcs(template.FuncMap{"FormatDate": FormatDate}).Parse(tmplEntry)
 	if err != nil {
 		return fmt.Errorf("failed to parse entry template: %w", err)
 	}
@@ -117,4 +121,9 @@ func (e *entry) render() error {
 	}
 
 	return nil
+}
+
+func sortByDate(entries []*entry) {
+	chrono := func(i, j int) bool { return entries[i].Date.After(entries[j].Date) }
+	sort.Slice(entries, chrono)
 }

@@ -20,7 +20,7 @@ func (t *tag) renderIndex() error {
 	var err error
 	var buf bytes.Buffer
 
-	tmpl, err := template.New("tag-index").Parse(tmplTags)
+	tmpl, err := template.New("tag-index").Funcs(template.FuncMap{"FormatDate": FormatDate}).Parse(tmplTags)
 	if err != nil {
 		return fmt.Errorf("failed to parse tag index template: %w", err)
 	}
