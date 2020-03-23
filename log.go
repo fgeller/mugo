@@ -1,16 +1,22 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/gorilla/feeds"
 )
 
 type log struct {
 	Title         string
 	BaseDirectory string
+	BaseURL       string
+	Config        *config
 
 	Entries         []*entry
 	RenderedEntries []*entry
@@ -20,20 +26,23 @@ type log struct {
 	templates *templates
 }
 
-func newLog(title string, baseDir string, templates *templates) *log {
+func newLog(cfg *config) *log {
 	lg := &log{
-		Title:           title,
-		BaseDirectory:   baseDir,
+		Title:           cfg.Title,
+		BaseDirectory:   cfg.BaseDirectory,
+		BaseURL:         cfg.BaseURL,
+		Config:          cfg,
 		Entries:         []*entry{},
 		RenderedEntries: []*entry{},
 		Groups:          map[string]*group{},
 		Tags:            map[string]*tag{},
-		templates:       templates,
 	}
 	return lg
 }
 
 func (l *log) regenerate() error {
+	measure(l.readTemplates, fail, "read templates in %vms.")
+
 	measure(l.findEntries, fail, "found entries in %vms.")
 	measure(l.renderEntries, fail, "rendered %v entries in %vms.", len(l.Entries))
 
@@ -43,7 +52,84 @@ func (l *log) regenerate() error {
 	measure(l.findTags, fail, "found tags in %vms.")
 	measure(l.renderTags, fail, "rendered %v tags in %vms.", len(l.Tags))
 
+	measure(l.renderFeed, fail, "rendered feed in %vms.")
+
 	measure(l.renderMainIndex, fail, "rendered main index in %vms.")
+
+	return nil
+}
+
+func (l *log) readTemplates() error {
+	var err error
+	l.templates, err = readTemplates(l.Config.Templates)
+	return err
+}
+
+func (l *log) renderFeed() error {
+	fc := l.Config.Feed
+	if fc == nil {
+		verbose("no config for rendering feed.")
+		return nil
+	}
+
+	fd := &feeds.Feed{
+		Title:       fc.Title,
+		Link:        &feeds.Link{Href: fc.LinkHREF},
+		Description: fc.Description,
+		Author:      &feeds.Author{Name: fc.AuthorName, Email: fc.AuthorEmail},
+		Created:     time.Now(),
+	}
+
+	for i, e := range l.RenderedEntries {
+		if i >= 3 {
+			break
+		}
+
+		url := l.BaseURL
+		if "/" != url[len(url)-1:] {
+			url += "/"
+		}
+		url += e.MainToEntryPath()
+
+		itm := &feeds.Item{
+			Title:   e.Title,
+			Link:    &feeds.Link{Href: fmt.Sprintf("%s/%s", l.BaseURL, e.MainToEntryPath())},
+			Source:  &feeds.Link{Href: fmt.Sprintf("%s/%s", l.BaseURL, e.MainToEntryPath())},
+			Created: e.Date,
+			Author:  &feeds.Author{Name: e.Author},
+			Content: e.RenderedHTML,
+		}
+		fd.Add(itm)
+	}
+
+	if fc.RSSEnabled {
+		of := filepath.Join(l.BaseDirectory, "rss.xml")
+		fh, err := os.OpenFile(of, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0755)
+		if err != nil {
+			return fmt.Errorf("failed to open rss file %#v: %w", of, err)
+		}
+
+		w := bufio.NewWriter(fh)
+		err = fd.WriteRss(w)
+		if err != nil {
+			return fmt.Errorf("failed to write feed to rss: %w", err)
+		}
+	}
+
+	if fc.AtomEnabled {
+		of := filepath.Join(l.BaseDirectory, "atom.xml")
+		fh, err := os.OpenFile(of, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0755)
+		if err != nil {
+			return fmt.Errorf("failed to open atom file %#v: %w", of, err)
+		}
+
+		w := bufio.NewWriter(fh)
+		err = fd.WriteAtom(w)
+		if err != nil {
+			return fmt.Errorf("failed to write feed to atom: %w", err)
+		}
+	}
+
 	return nil
 }
 

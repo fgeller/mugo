@@ -1,70 +1,105 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 )
 
-// TODO: rss
+// TODO: s/log/blog/g
+// TODO: sitemap.xml
 // TODO: template/html
 // TODO: fsnotify regenerate dir
 
 func main() {
-	var err error
-	var tpls *templates
-	args := newArguments(os.Args[1:])
-
-	err = args.parse()
+	cfg, err := readConfig()
 	fail(err)
 
-	err = args.validate()
-	fail(err)
-
-	tpls, err = readTemplates(args)
-	fail(err)
-
-	lg := newLog(args.Title, args.BaseDirectory, tpls)
+	lg := newLog(cfg)
 	err = lg.regenerate()
 	fail(err)
 }
 
-type arguments struct {
-	raw []string
+type config struct {
+	Title         string `json:"title"`
+	BaseDirectory string `json:"base-directory"`
+	BaseURL       string `json:"base-url"`
 
-	Title         string `cli:"title"`
-	BaseDirectory string `cli:"base-dir"`
-
-	MainTemplate  string `cli:"main-template"`
-	GroupTemplate string `cli:"group-template"`
-	TagsTemplate  string `cli:"tags-template"`
-	EntryTemplate string `cli:"entry-template"`
+	Templates *templatesConfig `json:"templates"`
+	Feed      *feedConfig      `json:"feed"`
 }
 
-func newArguments(raw []string) *arguments {
-	return &arguments{raw: raw}
+type templatesConfig struct {
+	Main  string `json:"main"`
+	Group string `json:"group"`
+	Tags  string `json:"tags"`
+	Entry string `json:"entry"`
 }
 
-func (a *arguments) validate() error {
-	if a.Title == "" {
+type feedConfig struct {
+	RSSEnabled  bool   `json:"rss-enabled"`
+	AtomEnabled bool   `json:"atom-enabled"`
+	Title       string `json:"title"`
+	LinkHREF    string `json:"link-href"`
+	AuthorName  string `json:"author-name"`
+	AuthorEmail string `json:"author-email"`
+	Description string `json:"description"`
+}
+
+func (c *config) validate() error {
+	if c.Title == "" {
 		return fmt.Errorf("title is required")
 	}
-	if a.BaseDirectory == "" {
-		return fmt.Errorf("base-dir is required")
+	if c.BaseDirectory == "" {
+		return fmt.Errorf("base-directory is required")
+	}
+	if c.BaseURL == "" {
+		return fmt.Errorf("base-url is required")
 	}
 	return nil
 }
 
-func (a *arguments) parse() error {
+func readConfig() (*config, error) {
+	cf, err := readFlags()
+	if err != nil {
+		return nil, err
+	}
+
+	bt, err := ioutil.ReadFile(cf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %#v: %w", cf, err)
+	}
+
+	result := &config{}
+	err = json.Unmarshal(bt, result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config file %#v: %w", cf, err)
+	}
+
+	err = result.validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func readFlags() (string, error) {
+	var err error
+	var cf string
 	flags := flag.NewFlagSet("mugo", flag.ContinueOnError)
+	flags.StringVar(&cf, "config", "", "Path to JSON config file (required).")
 
-	flags.StringVar(&a.Title, "title", "", "Top-level title (required).")
-	flags.StringVar(&a.BaseDirectory, "base-dir", "", "Base directory to scan (required).")
+	err = flags.Parse(os.Args[1:])
+	if err != nil {
+		return "", err
+	}
 
-	flags.StringVar(&a.MainTemplate, "main-template", "", "Go template for the main index page.")
-	flags.StringVar(&a.GroupTemplate, "group-template", "", "Go template for the group index page.")
-	flags.StringVar(&a.TagsTemplate, "tags-template", "", "Go template for the tags index page.")
-	flags.StringVar(&a.EntryTemplate, "entry-template", "", "Go template for the entry page.")
+	if cf == "" {
+		return "", fmt.Errorf("config is required.")
+	}
 
-	return flags.Parse(a.raw)
+	return cf, nil
 }

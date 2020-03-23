@@ -30,26 +30,26 @@ func createTemplate(name, file, fallback string) (*template.Template, error) {
 	return template.New(name).Funcs(funcs).Parse(raw)
 }
 
-func readTemplates(args *arguments) (*templates, error) {
+func readTemplates(cfg *templatesConfig) (*templates, error) {
 	var err error
 	result := &templates{}
 
-	result.Main, err = createTemplate("main", args.MainTemplate, tmplMain)
+	result.Main, err = createTemplate("main", cfg.Main, tmplMain)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse main template: %w", err)
 	}
 
-	result.Group, err = createTemplate("group", args.GroupTemplate, tmplGroup)
+	result.Group, err = createTemplate("group", cfg.Group, tmplGroup)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse group template: %w", err)
 	}
 
-	result.Tags, err = createTemplate("tags", args.TagsTemplate, tmplTags)
+	result.Tags, err = createTemplate("tags", cfg.Tags, tmplTags)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse tags template: %w", err)
 	}
 
-	result.Entry, err = createTemplate("entry", args.EntryTemplate, tmplEntry)
+	result.Entry, err = createTemplate("entry", cfg.Entry, tmplEntry)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse entry template: %w", err)
 	}
