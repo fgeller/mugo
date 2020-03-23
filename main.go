@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-// TODO: s/log/blog/g
 // TODO: sitemap.xml
 // TODO: template/html
 // TODO: fsnotify regenerate dir
@@ -17,7 +16,7 @@ func main() {
 	cfg, err := readConfig()
 	fail(err)
 
-	lg := newLog(cfg)
+	lg := newBlog(cfg)
 	err = lg.regenerate()
 	fail(err)
 }

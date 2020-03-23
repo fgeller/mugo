@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/feeds"
 )
 
-type log struct {
+type blog struct {
 	Title         string
 	BaseDirectory string
 	BaseURL       string
@@ -26,8 +26,8 @@ type log struct {
 	templates *templates
 }
 
-func newLog(cfg *config) *log {
-	lg := &log{
+func newBlog(cfg *config) *blog {
+	return &blog{
 		Title:           cfg.Title,
 		BaseDirectory:   cfg.BaseDirectory,
 		BaseURL:         cfg.BaseURL,
@@ -37,36 +37,35 @@ func newLog(cfg *config) *log {
 		Groups:          map[string]*group{},
 		Tags:            map[string]*tag{},
 	}
-	return lg
 }
 
-func (l *log) regenerate() error {
-	measure(l.readTemplates, fail, "read templates in %vms.")
+func (b *blog) regenerate() error {
+	measure(b.readTemplates, fail, "read templates in %vms.")
 
-	measure(l.findEntries, fail, "found entries in %vms.")
-	measure(l.renderEntries, fail, "rendered %v entries in %vms.", len(l.Entries))
+	measure(b.findEntries, fail, "found entries in %vms.")
+	measure(b.renderEntries, fail, "rendered %v entries in %vms.", len(b.Entries))
 
-	measure(l.findGroups, fail, "found groups in %vms.")
-	measure(l.renderGroups, fail, "rendered %v groups in %vms.", len(l.Groups))
+	measure(b.findGroups, fail, "found groups in %vms.")
+	measure(b.renderGroups, fail, "rendered %v groups in %vms.", len(b.Groups))
 
-	measure(l.findTags, fail, "found tags in %vms.")
-	measure(l.renderTags, fail, "rendered %v tags in %vms.", len(l.Tags))
+	measure(b.findTags, fail, "found tags in %vms.")
+	measure(b.renderTags, fail, "rendered %v tags in %vms.", len(b.Tags))
 
-	measure(l.renderFeed, fail, "rendered feed in %vms.")
+	measure(b.renderFeed, fail, "rendered feed in %vms.")
 
-	measure(l.renderMainIndex, fail, "rendered main index in %vms.")
+	measure(b.renderMainIndex, fail, "rendered main index in %vms.")
 
 	return nil
 }
 
-func (l *log) readTemplates() error {
+func (b *blog) readTemplates() error {
 	var err error
-	l.templates, err = readTemplates(l.Config.Templates)
+	b.templates, err = readTemplates(b.Config.Templates)
 	return err
 }
 
-func (l *log) renderFeed() error {
-	fc := l.Config.Feed
+func (b *blog) renderFeed() error {
+	fc := b.Config.Feed
 	if fc == nil {
 		verbose("no config for rendering feed.")
 		return nil
@@ -80,12 +79,12 @@ func (l *log) renderFeed() error {
 		Created:     time.Now(),
 	}
 
-	for i, e := range l.RenderedEntries {
+	for i, e := range b.RenderedEntries {
 		if i >= 3 {
 			break
 		}
 
-		url := l.BaseURL
+		url := b.BaseURL
 		if "/" != url[len(url)-1:] {
 			url += "/"
 		}
@@ -93,8 +92,8 @@ func (l *log) renderFeed() error {
 
 		itm := &feeds.Item{
 			Title:   e.Title,
-			Link:    &feeds.Link{Href: fmt.Sprintf("%s/%s", l.BaseURL, e.MainToEntryPath())},
-			Source:  &feeds.Link{Href: fmt.Sprintf("%s/%s", l.BaseURL, e.MainToEntryPath())},
+			Link:    &feeds.Link{Href: url},
+			Source:  &feeds.Link{Href: url},
 			Created: e.Date,
 			Author:  &feeds.Author{Name: e.Author},
 			Content: e.RenderedHTML,
@@ -103,7 +102,7 @@ func (l *log) renderFeed() error {
 	}
 
 	if fc.RSSEnabled {
-		of := filepath.Join(l.BaseDirectory, "rss.xml")
+		of := filepath.Join(b.BaseDirectory, "rss.xml")
 		fh, err := os.OpenFile(of, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0755)
 		if err != nil {
 			return fmt.Errorf("failed to open rss file %#v: %w", of, err)
@@ -117,7 +116,7 @@ func (l *log) renderFeed() error {
 	}
 
 	if fc.AtomEnabled {
-		of := filepath.Join(l.BaseDirectory, "atom.xml")
+		of := filepath.Join(b.BaseDirectory, "atom.xml")
 		fh, err := os.OpenFile(of, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0755)
 		if err != nil {
 			return fmt.Errorf("failed to open atom file %#v: %w", of, err)
@@ -133,31 +132,31 @@ func (l *log) renderFeed() error {
 	return nil
 }
 
-func (l *log) findTags() error {
-	for _, e := range l.Entries {
+func (b *blog) findTags() error {
+	for _, e := range b.Entries {
 		for _, t := range e.Tags {
-			_, ok := l.Tags[t]
+			_, ok := b.Tags[t]
 			if ok {
-				l.Tags[t].Entries = append(l.Tags[t].Entries, e)
+				b.Tags[t].Entries = append(b.Tags[t].Entries, e)
 			} else {
 				td := &tag{
 					Name:            t,
-					RelativeLink:    filepath.Base(l.BaseDirectory),
-					TagDirectory:    l.BaseDirectory,
+					RelativeLink:    filepath.Base(b.BaseDirectory),
+					TagDirectory:    b.BaseDirectory,
 					Entries:         []*entry{e},
 					RenderedEntries: []*entry{},
-					Log:             l,
-					template:        l.templates.Tags,
+					Blog:            b,
+					template:        b.templates.Tags,
 				}
-				l.Tags[t] = td
+				b.Tags[t] = td
 			}
 			if !e.IsDraft {
-				l.Tags[t].RenderedEntries = append(l.Tags[t].RenderedEntries, e)
+				b.Tags[t].RenderedEntries = append(b.Tags[t].RenderedEntries, e)
 			}
 		}
 	}
 
-	for _, t := range l.Tags {
+	for _, t := range b.Tags {
 		sortByDate(t.Entries)
 		sortByDate(t.RenderedEntries)
 	}
@@ -165,8 +164,8 @@ func (l *log) findTags() error {
 	return nil
 }
 
-func (l *log) renderTags() error {
-	for _, t := range l.Tags {
+func (b *blog) renderTags() error {
+	for _, t := range b.Tags {
 		err := t.renderIndex()
 		if err != nil {
 			return err
@@ -175,15 +174,15 @@ func (l *log) renderTags() error {
 	return nil
 }
 
-func (l *log) findGroups() error {
-	for _, e := range l.Entries {
+func (b *blog) findGroups() error {
+	for _, e := range b.Entries {
 		gp := e.groupPath()
 		gn := filepath.Base(gp)
 
-		pth := filepath.Join(filepath.Base(l.BaseDirectory), gn)
-		fp := filepath.Join(l.BaseDirectory, gn)
+		pth := filepath.Join(filepath.Base(b.BaseDirectory), gn)
+		fp := filepath.Join(b.BaseDirectory, gn)
 
-		_, ok := l.Groups[gn]
+		_, ok := b.Groups[gn]
 		if !ok {
 			g := &group{
 				Name:            gn,
@@ -191,21 +190,21 @@ func (l *log) findGroups() error {
 				RelativeLink:    pth,
 				Entries:         []*entry{e},
 				RenderedEntries: []*entry{},
-				Log:             l,
-				template:        l.templates.Group,
+				Blog:            b,
+				template:        b.templates.Group,
 			}
-			l.Groups[gn] = g
+			b.Groups[gn] = g
 		} else {
-			l.Groups[gn].Entries = append(l.Groups[gn].Entries, e)
+			b.Groups[gn].Entries = append(b.Groups[gn].Entries, e)
 		}
 
 		if !e.IsDraft {
-			l.Groups[gn].RenderedEntries = append(l.Groups[gn].RenderedEntries, e)
+			b.Groups[gn].RenderedEntries = append(b.Groups[gn].RenderedEntries, e)
 		}
 
 	}
 
-	for _, g := range l.Groups {
+	for _, g := range b.Groups {
 		sortByDate(g.Entries)
 		sortByDate(g.RenderedEntries)
 	}
@@ -213,8 +212,8 @@ func (l *log) findGroups() error {
 	return nil
 }
 
-func (l *log) renderGroups() error {
-	for _, g := range l.Groups {
+func (b *blog) renderGroups() error {
+	for _, g := range b.Groups {
 		err := g.renderIndex()
 		if err != nil {
 			return err
@@ -223,16 +222,16 @@ func (l *log) renderGroups() error {
 	return nil
 }
 
-func (l *log) renderMainIndex() error {
+func (b *blog) renderMainIndex() error {
 	var err error
 	var buf bytes.Buffer
 
-	err = l.templates.Main.ExecuteTemplate(&buf, "main", l)
+	err = b.templates.Main.ExecuteTemplate(&buf, "main", b)
 	if err != nil {
 		return fmt.Errorf("failed to execute main index template: %w", err)
 	}
 
-	fp := filepath.Join(l.BaseDirectory, "index.html")
+	fp := filepath.Join(b.BaseDirectory, "index.html")
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write main index file: %w", err)
@@ -242,43 +241,43 @@ func (l *log) renderMainIndex() error {
 	return nil
 }
 
-func (l *log) LatestRenderedEntry() *entry {
-	if len(l.RenderedEntries) == 0 {
+func (b *blog) LatestRenderedEntry() *entry {
+	if len(b.RenderedEntries) == 0 {
 		return nil
 	} else {
-		return l.RenderedEntries[0]
+		return b.RenderedEntries[0]
 	}
 }
 
-func (l *log) findEntries() error {
+func (b *blog) findEntries() error {
 	walker := func(pth string, info os.FileInfo, err error) error {
 		if filepath.Ext(info.Name()) == ".md" {
 			e := &entry{
 				MDFile:   pth,
 				HTMLFile: htmlPath(pth),
-				Log:      l,
-				template: l.templates.Entry,
+				Blog:     b,
+				template: b.templates.Entry,
 			}
-			l.Entries = append(l.Entries, e)
+			b.Entries = append(b.Entries, e)
 		}
 		return err
 	}
-	err := filepath.Walk(l.BaseDirectory, walker)
-	verbose("walked base-dir %#v and found %v entries.", l.BaseDirectory, len(l.Entries))
+	err := filepath.Walk(b.BaseDirectory, walker)
+	verbose("walked base-dir %#v and found %v entries.", b.BaseDirectory, len(b.Entries))
 	return err
 }
 
-func (l *log) renderEntries() error {
-	for _, e := range l.Entries {
+func (b *blog) renderEntries() error {
+	for _, e := range b.Entries {
 		err := e.render()
 		if err != nil {
 			return err
 		}
 		if !e.IsDraft {
-			l.RenderedEntries = append(l.RenderedEntries, e)
+			b.RenderedEntries = append(b.RenderedEntries, e)
 		}
 	}
-	sortByDate(l.Entries)
-	sortByDate(l.RenderedEntries)
+	sortByDate(b.Entries)
+	sortByDate(b.RenderedEntries)
 	return nil
 }
