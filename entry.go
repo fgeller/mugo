@@ -19,6 +19,7 @@ type entry struct {
 	HTMLFile string
 
 	Title   string
+	Summary string
 	Date    time.Time
 	Author  string
 	Tags    []string
@@ -55,6 +56,11 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 	_, ok = header["draft"].(bool)
 	if ok {
 		e.IsDraft = header["draft"].(bool)
+	}
+
+	_, ok = header["summary"].(string)
+	if ok {
+		e.Summary = header["summary"].(string)
 	}
 
 	return nil
