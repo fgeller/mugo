@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"text/template"
+	"time"
 )
 
 type templates struct {
@@ -13,9 +14,13 @@ type templates struct {
 	Entry *template.Template
 }
 
+func NowFormatted() string {
+	return time.Now().Format(time.RFC3339)
+}
+
 func createTemplate(name, file, fallback string) (*template.Template, error) {
 	var raw string
-	funcs := template.FuncMap{"FormatDate": FormatDate}
+	funcs := template.FuncMap{"FormatDate": FormatDate, "Now": NowFormatted}
 	if file == "" {
 		raw = fallback
 		verbose("template %#v uses fallback rather than file: %#v", name, file)
