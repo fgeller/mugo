@@ -18,7 +18,16 @@ type group struct {
 	template        *template.Template
 }
 
+func (g *group) URL() string {
+	return urlJoin(g.Blog.BaseURL, g.Name, g.HTMLFileName())
+}
+
+func (g *group) HTMLFileName() string {
+	return "index.html"
+}
+
 func (g *group) renderIndex() error {
+
 	var err error
 	var buf bytes.Buffer
 
@@ -27,7 +36,7 @@ func (g *group) renderIndex() error {
 		return fmt.Errorf("failed to execute group index template: %w", err)
 	}
 
-	fp := filepath.Join(g.GroupDirectory, "index.html")
+	fp := filepath.Join(g.GroupDirectory, g.HTMLFileName())
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write group index file: %w", err)

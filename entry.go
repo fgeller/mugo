@@ -68,6 +68,18 @@ func (e *entry) Group() string {
 	return filepath.Base(e.groupPath())
 }
 
+func (e *entry) Dir() string {
+	return filepath.Base(filepath.Dir(e.MDFile))
+}
+
+func (e *entry) HTMLFileName() string {
+	return filepath.Base(e.HTMLFile)
+}
+
+func (e *entry) URL() string {
+	return urlJoin(e.Blog.BaseURL, e.Group(), e.Dir(), e.HTMLFileName())
+}
+
 func (e *entry) GroupToEntryPath() string {
 	date := filepath.Base(filepath.Dir(e.HTMLFile))
 	fn := filepath.Base(e.HTMLFile)

@@ -18,6 +18,14 @@ type tag struct {
 	template        *template.Template
 }
 
+func (t *tag) URL() string {
+	return urlJoin(t.Blog.BaseURL, t.HTMLFileName())
+}
+
+func (t *tag) HTMLFileName() string {
+	return fmt.Sprintf("%s.html", t.Name)
+}
+
 func (t *tag) renderIndex() error {
 	var err error
 	var buf bytes.Buffer
@@ -27,7 +35,7 @@ func (t *tag) renderIndex() error {
 		return fmt.Errorf("failed to execute tag index template: %w", err)
 	}
 
-	fp := filepath.Join(t.TagDirectory, fmt.Sprintf("%s.html", t.Name))
+	fp := filepath.Join(t.TagDirectory, t.HTMLFileName())
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write tag index file: %w", err)

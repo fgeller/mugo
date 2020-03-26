@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-// TODO: sitemap.xml
 // TODO: template/html
-// TODO: fsnotify regenerate dir
 
 func main() {
 	cfg, err := readConfig()
@@ -25,6 +23,8 @@ type config struct {
 	Title         string `json:"title"`
 	BaseDirectory string `json:"base-directory"`
 	BaseURL       string `json:"base-url"`
+
+	SitemapFile string `json:"sitemap-file"`
 
 	Templates *templatesConfig `json:"templates"`
 	Feed      *feedConfig      `json:"feed"`

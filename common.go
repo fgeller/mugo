@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,20 @@ func htmlPath(md string) string {
 	fn := fmt.Sprintf("%s.html", bs[:len(bs)-len(".md")])
 	html := filepath.Join(filepath.Dir(md), fn)
 	return html
+}
+
+func urlJoin(args ...string) string {
+	result := args[0]
+	for i, u := range args {
+		if i == 0 {
+			continue
+		}
+		if !strings.HasSuffix(result, "/") {
+			result += "/"
+		}
+		result += u
+	}
+	return result
 }
 
 func verbose(fs string, args ...interface{}) {

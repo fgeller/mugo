@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"text/template"
 	"time"
 
 	"github.com/gorilla/feeds"
@@ -55,6 +56,8 @@ func (b *blog) regenerate() error {
 
 	measure(b.renderMainIndex, fail, "rendered main index in %vms.")
 
+	measure(b.renderSitemap, fail, "rendered sitemap in %vms.")
+
 	return nil
 }
 
@@ -62,6 +65,68 @@ func (b *blog) readTemplates() error {
 	var err error
 	b.templates, err = readTemplates(b.Config.Templates)
 	return err
+}
+
+func (b *blog) collectURLs() []string {
+	urls := []string{}
+
+	urls = append(urls, b.URL())
+
+	for _, e := range b.RenderedEntries {
+		urls = append(urls, e.URL())
+	}
+
+	for _, g := range b.Groups {
+		urls = append(urls, g.URL())
+	}
+
+	for _, t := range b.Tags {
+		urls = append(urls, t.URL())
+	}
+
+	return urls
+}
+
+func (b *blog) URL() string {
+	return urlJoin(b.BaseURL, "index.html")
+}
+
+func (b *blog) renderSitemap() error {
+	if b.Config.SitemapFile == "" {
+		verbose("no sitemap file configured")
+		return nil
+	}
+
+	var buf bytes.Buffer
+	var err error
+
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{{ range . }}    <url>
+        <loc>{{ . }}</loc>
+    </url>
+{{ end }}</urlset>
+`
+
+	tmpl, err := template.New("sitemap").Parse(xml)
+	if err != nil {
+		return err
+	}
+
+	urls := b.collectURLs()
+	err = tmpl.ExecuteTemplate(&buf, "sitemap", urls)
+	if err != nil {
+		return fmt.Errorf("failed to execute sitemap template: %w", err)
+	}
+
+	fn := filepath.Join(b.BaseDirectory, b.Config.SitemapFile)
+	err = ioutil.WriteFile(fn, buf.Bytes(), 0755)
+	if err != nil {
+		return fmt.Errorf("failed to write %#v: %w", fn, err)
+	}
+
+	verbose("write sitemap to %#v with %v entries.", fn, len(urls))
+	return nil
 }
 
 func (b *blog) renderFeed() error {
