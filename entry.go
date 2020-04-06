@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"sort"
-	"text/template"
 	"time"
 
 	"github.com/yuin/goldmark"
@@ -20,15 +19,23 @@ type entry struct {
 
 	Title   string
 	Summary string
-	Date    time.Time
+	Date    time.Time // TODO rename posted
 	Author  string
 	Tags    []string
-	IsDraft bool
 
 	RenderedHTML string
 
-	Blog     *blog
-	template *template.Template
+	Blog *blog
+}
+
+func newEntry(b *blog, md string) (*entry, error) {
+	e := &entry{
+		MDFile:   md,
+		HTMLFile: htmlPath(md),
+		Blog:     b,
+	}
+
+	return e, e.readMD()
 }
 
 func (e *entry) parseHeader(ctx parser.Context) error {
@@ -51,11 +58,6 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 	}
 	for _, t := range raw {
 		e.Tags = append(e.Tags, t.(string))
-	}
-
-	_, ok = header["draft"].(bool)
-	if ok {
-		e.IsDraft = header["draft"].(bool)
 	}
 
 	_, ok = header["summary"].(string)
@@ -99,7 +101,7 @@ func (e *entry) MainToEntryPath() string {
 	return filepath.Join(group, date, fn)
 }
 
-func (e *entry) render() error {
+func (e *entry) readMD() error {
 	md := goldmark.New(goldmark.WithExtensions(meta.Meta))
 	ctx := parser.NewContext()
 	var buf bytes.Buffer
@@ -119,22 +121,23 @@ func (e *entry) render() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse header: %w", err)
 	}
+	return nil
+}
 
-	buf.Reset()
-	err = e.template.ExecuteTemplate(&buf, "entry", e)
+func (e *entry) writeHTML() error {
+	var err error
+	var buf bytes.Buffer
+
+	err = e.Blog.templates.Entry.ExecuteTemplate(&buf, "entry", e)
 	if err != nil {
 		return fmt.Errorf("failed to execute entry template: %w", err)
 	}
 
-	if !e.IsDraft {
-		err = ioutil.WriteFile(e.HTMLFile, buf.Bytes(), 0777)
-		if err != nil {
-			return err
-		}
-		verbose("rendered entry %#v to %#v.", e.Title, e.HTMLFile)
-	} else {
-		verbose("rendered entry draft %#v in memory.", e.Title)
+	err = ioutil.WriteFile(e.HTMLFile, buf.Bytes(), 0777)
+	if err != nil {
+		return err
 	}
+	verbose("write entry %#v to %#v.", e.Title, e.HTMLFile)
 
 	return nil
 }

@@ -5,17 +5,23 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"text/template"
 )
 
 type group struct {
-	Name            string
-	GroupDirectory  string
-	RelativeLink    string
-	RenderedEntries []*entry
-	Entries         []*entry
-	Blog            *blog
-	template        *template.Template
+	Name    string
+	Entries []*entry
+	Blog    *blog
+}
+
+func newGroup(b *blog, name string) *group {
+	g := &group{Name: name, Entries: []*entry{}, Blog: b}
+	for _, e := range b.Entries {
+		if e.Group() == name {
+			g.Entries = append(g.Entries, e)
+		}
+	}
+	sortByDate(g.Entries)
+	return g
 }
 
 func (g *group) URL() string {
@@ -27,16 +33,15 @@ func (g *group) HTMLFileName() string {
 }
 
 func (g *group) renderIndex() error {
-
 	var err error
 	var buf bytes.Buffer
 
-	err = g.template.ExecuteTemplate(&buf, "group", g)
+	err = g.Blog.templates.Group.ExecuteTemplate(&buf, "group", g)
 	if err != nil {
 		return fmt.Errorf("failed to execute group index template: %w", err)
 	}
 
-	fp := filepath.Join(g.GroupDirectory, g.HTMLFileName())
+	fp := filepath.Join(g.Blog.BaseDirectory, g.Name, g.HTMLFileName())
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write group index file: %w", err)

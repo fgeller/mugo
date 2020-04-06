@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"text/template"
 	"time"
 
@@ -19,32 +20,30 @@ type blog struct {
 	BaseURL       string
 	Config        *config
 
-	Entries         []*entry
-	RenderedEntries []*entry
-	Groups          map[string]*group
-	Tags            map[string]*tag
+	Entries []*entry
+	Groups  []*group
+	Tags    []*tag
 
 	templates *templates
 }
 
 func newBlog(cfg *config) *blog {
 	return &blog{
-		Title:           cfg.Title,
-		BaseDirectory:   cfg.BaseDirectory,
-		BaseURL:         cfg.BaseURL,
-		Config:          cfg,
-		Entries:         []*entry{},
-		RenderedEntries: []*entry{},
-		Groups:          map[string]*group{},
-		Tags:            map[string]*tag{},
+		Title:         cfg.Title,
+		BaseDirectory: cfg.BaseDirectory,
+		BaseURL:       cfg.BaseURL,
+		Config:        cfg,
+		Entries:       []*entry{},
+		Groups:        []*group{},
+		Tags:          []*tag{},
 	}
 }
 
 func (b *blog) regenerate() error {
 	measure(b.readTemplates, fail, "read templates in %vms.")
 
-	measure(b.findEntries, fail, "found entries in %vms.")
-	measure(b.renderEntries, fail, "rendered %v entries in %vms.", len(b.Entries))
+	measure(b.readEntries, fail, "found entries in %vms.")
+	measure(b.writeEntries, fail, "rendered %v entries in %vms.", len(b.Entries))
 
 	measure(b.findGroups, fail, "found groups in %vms.")
 	measure(b.renderGroups, fail, "rendered %v groups in %vms.", len(b.Groups))
@@ -72,7 +71,7 @@ func (b *blog) collectURLs() []string {
 
 	urls = append(urls, b.URL())
 
-	for _, e := range b.RenderedEntries {
+	for _, e := range b.Entries {
 		urls = append(urls, e.URL())
 	}
 
@@ -144,11 +143,7 @@ func (b *blog) renderFeed() error {
 		Created:     time.Now(),
 	}
 
-	for i, e := range b.RenderedEntries {
-		if i >= 3 {
-			break
-		}
-
+	for _, e := range b.LatestEntries(3) {
 		url := b.BaseURL
 		if "/" != url[len(url)-1:] {
 			url += "/"
@@ -197,33 +192,31 @@ func (b *blog) renderFeed() error {
 	return nil
 }
 
-func (b *blog) findTags() error {
+func (b *blog) findTagNames() []string {
+	uniq := map[string]struct{}{}
+
 	for _, e := range b.Entries {
-		for _, t := range e.Tags {
-			_, ok := b.Tags[t]
-			if ok {
-				b.Tags[t].Entries = append(b.Tags[t].Entries, e)
-			} else {
-				td := &tag{
-					Name:            t,
-					RelativeLink:    filepath.Base(b.BaseDirectory),
-					TagDirectory:    b.BaseDirectory,
-					Entries:         []*entry{e},
-					RenderedEntries: []*entry{},
-					Blog:            b,
-					template:        b.templates.Tags,
-				}
-				b.Tags[t] = td
-			}
-			if !e.IsDraft {
-				b.Tags[t].RenderedEntries = append(b.Tags[t].RenderedEntries, e)
-			}
+		for _, tn := range e.Tags {
+			uniq[tn] = struct{}{}
 		}
 	}
 
-	for _, t := range b.Tags {
-		sortByDate(t.Entries)
-		sortByDate(t.RenderedEntries)
+	result := make([]string, 0, len(uniq))
+	for tn, _ := range uniq {
+		result = append(result, tn)
+	}
+	sort.Strings(result)
+
+	return result
+}
+
+func (b *blog) findTags() error {
+	tagNames := b.findTagNames()
+
+	b.Tags = make([]*tag, 0, len(tagNames))
+	for _, tn := range tagNames {
+		t := newTag(b, tn)
+		b.Tags = append(b.Tags, t)
 	}
 
 	return nil
@@ -239,41 +232,31 @@ func (b *blog) renderTags() error {
 	return nil
 }
 
-func (b *blog) findGroups() error {
+func (b *blog) findGroupNames() []string {
+	uniqNames := map[string]struct{}{}
+
 	for _, e := range b.Entries {
-		gp := e.groupPath()
-		gn := filepath.Base(gp)
-
-		pth := filepath.Join(filepath.Base(b.BaseDirectory), gn)
-		fp := filepath.Join(b.BaseDirectory, gn)
-
-		_, ok := b.Groups[gn]
-		if !ok {
-			g := &group{
-				Name:            gn,
-				GroupDirectory:  fp,
-				RelativeLink:    pth,
-				Entries:         []*entry{e},
-				RenderedEntries: []*entry{},
-				Blog:            b,
-				template:        b.templates.Group,
-			}
-			b.Groups[gn] = g
-		} else {
-			b.Groups[gn].Entries = append(b.Groups[gn].Entries, e)
-		}
-
-		if !e.IsDraft {
-			b.Groups[gn].RenderedEntries = append(b.Groups[gn].RenderedEntries, e)
-		}
-
+		uniqNames[e.Group()] = struct{}{}
 	}
 
-	for _, g := range b.Groups {
-		sortByDate(g.Entries)
-		sortByDate(g.RenderedEntries)
+	result := make([]string, 0, len(uniqNames))
+	for n, _ := range uniqNames {
+		result = append(result, n)
 	}
 
+	sort.Strings(result)
+
+	return result
+}
+
+func (b *blog) findGroups() error {
+	groupNames := b.findGroupNames()
+
+	b.Groups = make([]*group, 0, len(groupNames))
+	for _, n := range groupNames {
+		g := newGroup(b, n)
+		b.Groups = append(b.Groups, g)
+	}
 	return nil
 }
 
@@ -306,43 +289,55 @@ func (b *blog) renderMainIndex() error {
 	return nil
 }
 
-func (b *blog) LatestRenderedEntry() *entry {
-	if len(b.RenderedEntries) == 0 {
-		return nil
-	} else {
-		return b.RenderedEntries[0]
-	}
-}
-
-func (b *blog) findEntries() error {
+func (b *blog) readEntries() error {
+	mds := []string{}
 	walker := func(pth string, info os.FileInfo, err error) error {
 		if filepath.Ext(info.Name()) == ".md" {
-			e := &entry{
-				MDFile:   pth,
-				HTMLFile: htmlPath(pth),
-				Blog:     b,
-				template: b.templates.Entry,
-			}
-			b.Entries = append(b.Entries, e)
+			mds = append(mds, pth)
 		}
 		return err
 	}
 	err := filepath.Walk(b.BaseDirectory, walker)
-	verbose("walked base-dir %#v and found %v entries.", b.BaseDirectory, len(b.Entries))
-	return err
-}
+	if err != nil {
+		return fmt.Errorf("failed to search for md files: %w", err)
+	}
+	verbose("walked base-dir %#v and found %v md files.", b.BaseDirectory, len(mds))
 
-func (b *blog) renderEntries() error {
-	for _, e := range b.Entries {
-		err := e.render()
+	b.Entries = make([]*entry, 0, len(mds))
+	for _, md := range mds {
+		e, err := newEntry(b, md)
 		if err != nil {
 			return err
 		}
-		if !e.IsDraft {
-			b.RenderedEntries = append(b.RenderedEntries, e)
+		b.Entries = append(b.Entries, e)
+	}
+
+	sortByDate(b.Entries)
+	return nil
+}
+
+func (b *blog) writeEntries() error {
+	for _, e := range b.Entries {
+		err := e.writeHTML()
+		if err != nil {
+			return err
 		}
 	}
 	sortByDate(b.Entries)
-	sortByDate(b.RenderedEntries)
 	return nil
+}
+
+func (b *blog) LatestEntries(count int) []*entry {
+	result := make([]*entry, 0, count)
+
+	if len(b.Entries) == 0 {
+		return result
+	} else if len(b.Entries) < count {
+		count = len(b.Entries)
+	}
+
+	for i := 0; i < count; i++ {
+		result = append(result, b.Entries[i])
+	}
+	return result
 }

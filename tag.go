@@ -5,17 +5,27 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"text/template"
 )
 
 type tag struct {
-	Name            string
-	RelativeLink    string
-	TagDirectory    string
-	RenderedEntries []*entry
-	Entries         []*entry
-	Blog            *blog
-	template        *template.Template
+	Name    string
+	Entries []*entry
+	Blog    *blog
+}
+
+func newTag(b *blog, name string) *tag {
+	t := &tag{Name: name, Entries: []*entry{}, Blog: b}
+	for _, e := range b.Entries {
+		for _, tn := range e.Tags {
+			if tn == name {
+				t.Entries = append(t.Entries, e)
+				break
+			}
+		}
+	}
+	sortByDate(t.Entries)
+
+	return t
 }
 
 func (t *tag) URL() string {
@@ -30,12 +40,12 @@ func (t *tag) renderIndex() error {
 	var err error
 	var buf bytes.Buffer
 
-	err = t.template.ExecuteTemplate(&buf, "tags", t)
+	err = t.Blog.templates.Tags.ExecuteTemplate(&buf, "tags", t)
 	if err != nil {
 		return fmt.Errorf("failed to execute tag index template: %w", err)
 	}
 
-	fp := filepath.Join(t.TagDirectory, t.HTMLFileName())
+	fp := filepath.Join(t.Blog.BaseDirectory, t.HTMLFileName())
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write tag index file: %w", err)
