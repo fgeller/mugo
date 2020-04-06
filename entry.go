@@ -69,12 +69,9 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 	return nil
 }
 
-func (e *entry) groupPath() string {
-	return filepath.Dir(filepath.Dir(e.MDFile))
-}
-
 func (e *entry) Group() string {
-	return filepath.Base(e.groupPath())
+	gp := filepath.Dir(filepath.Dir(e.MDFile))
+	return filepath.Base(gp)
 }
 
 func (e *entry) Dir() string {
@@ -87,19 +84,6 @@ func (e *entry) HTMLFileName() string {
 
 func (e *entry) URL() string {
 	return urlJoin(e.Blog.BaseURL, e.Group(), e.Dir(), e.HTMLFileName())
-}
-
-func (e *entry) GroupToEntryPath() string {
-	date := filepath.Base(filepath.Dir(e.HTMLFile))
-	fn := filepath.Base(e.HTMLFile)
-	return filepath.Join(date, fn)
-}
-
-func (e *entry) MainToEntryPath() string {
-	group := filepath.Base(filepath.Dir(filepath.Dir(e.HTMLFile)))
-	date := filepath.Base(filepath.Dir(e.HTMLFile))
-	fn := filepath.Base(e.HTMLFile)
-	return filepath.Join(group, date, fn)
 }
 
 func (e *entry) readMD() error {
