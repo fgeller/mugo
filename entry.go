@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"path/filepath"
 	"sort"
@@ -23,7 +24,7 @@ type entry struct {
 	Author  string
 	Tags    []string
 
-	RenderedHTML string
+	RenderedHTML template.HTML
 
 	Blog *blog
 }
@@ -115,7 +116,7 @@ func (e *entry) readMD() error {
 	if err != nil {
 		return fmt.Errorf("failed to convert markdown to html: %w", err)
 	}
-	e.RenderedHTML = buf.String()
+	e.RenderedHTML = template.HTML(buf.String())
 
 	err = e.parseHeader(ctx)
 	if err != nil {

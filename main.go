@@ -8,8 +8,6 @@ import (
 	"os"
 )
 
-// TODO: template/html
-
 func main() {
 	cfg, err := readConfig()
 	fail(err)

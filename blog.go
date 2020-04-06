@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
-	"text/template"
 	"time"
 
 	"github.com/gorilla/feeds"
@@ -156,7 +156,7 @@ func (b *blog) renderFeed() error {
 			Source:  &feeds.Link{Href: url},
 			Created: e.Date,
 			Author:  &feeds.Author{Name: e.Author},
-			Content: e.RenderedHTML,
+			Content: string(e.RenderedHTML),
 		}
 		fd.Add(itm)
 	}
