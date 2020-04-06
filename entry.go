@@ -20,7 +20,7 @@ type entry struct {
 
 	Title   string
 	Summary string
-	Date    time.Time // TODO rename posted
+	Posted  time.Time
 	Author  string
 	Tags    []string
 
@@ -47,7 +47,7 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 
 	e.Author = header["author"].(string)
 
-	e.Date, err = time.Parse("2006-01-02", header["date"].(string))
+	e.Posted, err = time.Parse("2006-01-02", header["date"].(string))
 	if err != nil {
 		return fmt.Errorf("failed to parse header date %w", err)
 	}
@@ -144,6 +144,6 @@ func (e *entry) writeHTML() error {
 }
 
 func sortByDate(entries []*entry) {
-	chrono := func(i, j int) bool { return entries[i].Date.After(entries[j].Date) }
+	chrono := func(i, j int) bool { return entries[i].Posted.After(entries[j].Posted) }
 	sort.Slice(entries, chrono)
 }

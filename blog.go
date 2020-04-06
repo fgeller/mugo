@@ -144,17 +144,11 @@ func (b *blog) renderFeed() error {
 	}
 
 	for _, e := range b.LatestEntries(3) {
-		url := b.BaseURL
-		if "/" != url[len(url)-1:] {
-			url += "/"
-		}
-		url += e.MainToEntryPath()
-
 		itm := &feeds.Item{
 			Title:   e.Title,
-			Link:    &feeds.Link{Href: url},
-			Source:  &feeds.Link{Href: url},
-			Created: e.Date,
+			Link:    &feeds.Link{Href: e.URL()},
+			Source:  &feeds.Link{Href: e.URL()},
+			Created: e.Posted,
 			Author:  &feeds.Author{Name: e.Author},
 			Content: string(e.RenderedHTML),
 		}
