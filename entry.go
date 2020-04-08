@@ -86,6 +86,10 @@ func (e *entry) URL() string {
 	return urlJoin(e.Blog.BaseURL, e.Group(), e.Dir(), e.HTMLFileName())
 }
 
+func (e *entry) RelativeURL() string {
+	return urlJoin("/", e.Group(), e.Dir(), e.HTMLFileName())
+}
+
 func (e *entry) readMD() error {
 	md := goldmark.New(goldmark.WithExtensions(meta.Meta))
 	ctx := parser.NewContext()

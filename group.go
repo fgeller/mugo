@@ -28,6 +28,10 @@ func (g *group) URL() string {
 	return urlJoin(g.Blog.BaseURL, g.Name, g.HTMLFileName())
 }
 
+func (g *group) RelativeURL() string {
+	return urlJoin("/", g.Name, g.HTMLFileName())
+}
+
 func (g *group) HTMLFileName() string {
 	return "index.html"
 }
@@ -49,8 +53,4 @@ func (g *group) renderIndex() error {
 	verbose("rendered index for group %#v to %#v.", g.Name, fp)
 
 	return nil
-}
-
-func (g *group) MainToGroupPath() string {
-	return filepath.Join(g.Name, "index.html")
 }

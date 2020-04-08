@@ -32,6 +32,10 @@ func (t *tag) URL() string {
 	return urlJoin(t.Blog.BaseURL, t.HTMLFileName())
 }
 
+func (t *tag) RelativeURL() string {
+	return urlJoin("/", t.HTMLFileName())
+}
+
 func (t *tag) HTMLFileName() string {
 	return fmt.Sprintf("%s.html", t.Name)
 }
