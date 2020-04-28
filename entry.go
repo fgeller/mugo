@@ -12,6 +12,7 @@ import (
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
 	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 type entry struct {
@@ -98,7 +99,16 @@ func (e *entry) RelativeURL() string {
 }
 
 func (e *entry) readMD() error {
-	md := goldmark.New(goldmark.WithExtensions(meta.Meta))
+	md := goldmark.New(
+		goldmark.WithExtensions(meta.Meta),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(
+			html.WithXHTML(),
+			html.WithUnsafe(),
+		),
+	)
 	ctx := parser.NewContext()
 	var buf bytes.Buffer
 
