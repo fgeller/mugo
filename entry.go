@@ -11,8 +11,10 @@ import (
 
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
+	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
 )
 
 type entry struct {
@@ -20,7 +22,7 @@ type entry struct {
 	HTMLFile string
 
 	Title   string
-	Summary string
+	Summary template.HTML
 	Posted  time.Time
 	Author  string
 	Tags    []string
@@ -71,7 +73,7 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 
 	_, ok = header["summary"].(string)
 	if ok {
-		e.Summary = header["summary"].(string)
+		e.Summary = template.HTML(header["summary"].(string))
 	}
 
 	return nil
@@ -100,7 +102,10 @@ func (e *entry) RelativeURL() string {
 
 func (e *entry) readMD() error {
 	md := goldmark.New(
-		goldmark.WithExtensions(meta.Meta),
+		goldmark.WithExtensions(
+			meta.Meta,
+			extension.GFM,
+		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
 		),
@@ -127,6 +132,18 @@ func (e *entry) readMD() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse header: %w", err)
 	}
+
+	if e.Summary == "" {
+		reader := text.NewReader(src)
+		doc := md.Parser().Parse(reader)
+
+		var p bytes.Buffer
+		err := md.Renderer().Render(&p, src, doc.FirstChild())
+		if err == nil {
+			e.Summary = template.HTML(p.String())
+		}
+	}
+
 	return nil
 }
 
