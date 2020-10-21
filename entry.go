@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"net/url"
 	"path/filepath"
 	"sort"
 	"time"
@@ -15,6 +16,8 @@ import (
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
+
+	"github.com/fgeller/relabs"
 )
 
 type entry struct {
@@ -100,11 +103,22 @@ func (e *entry) RelativeURL() string {
 	return urlJoin("/", e.Group(), e.Dir(), e.HTMLFileName())
 }
 
+func (e *entry) BaseURL() (*url.URL, error) {
+	raw := urlJoin(e.Blog.BaseURL, e.Group(), e.Dir()) + "/"
+	return url.Parse(raw)
+}
+
 func (e *entry) readMD() error {
+	bu, err := e.BaseURL()
+	if err != nil {
+		return err
+	}
+
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			meta.Meta,
 			extension.GFM,
+			relabs.NewRelabs(bu),
 		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
