@@ -24,6 +24,8 @@ type config struct {
 
 	SitemapFile string `json:"sitemap-file"`
 
+	ResolveRelativeLinks bool `json:"resolve-relative-links"`
+
 	Templates *templatesConfig `json:"templates"`
 	Feed      *feedConfig      `json:"feed"`
 }

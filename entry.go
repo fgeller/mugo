@@ -109,17 +109,17 @@ func (e *entry) BaseURL() (*url.URL, error) {
 }
 
 func (e *entry) readMD() error {
-	bu, err := e.BaseURL()
-	if err != nil {
-		return err
+	exts := []goldmark.Extender{meta.Meta, extension.GFM}
+	if e.Blog.Config.ResolveRelativeLinks {
+		bu, err := e.BaseURL()
+		if err != nil {
+			return err
+		}
+		exts = append(exts, relabs.NewRelabs(bu))
 	}
 
 	md := goldmark.New(
-		goldmark.WithExtensions(
-			meta.Meta,
-			extension.GFM,
-			relabs.NewRelabs(bu),
-		),
+		goldmark.WithExtensions(exts...),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
 		),
