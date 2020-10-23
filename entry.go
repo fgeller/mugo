@@ -36,13 +36,27 @@ type entry struct {
 }
 
 func newEntry(b *blog, md string) (*entry, error) {
-	e := &entry{
-		MDFile:   md,
-		HTMLFile: htmlPath(md),
-		Blog:     b,
+	e := &entry{MDFile: md, Blog: b}
+	html, err := inferHTMLFilePath(b, md)
+	if err != nil {
+		return nil, err
 	}
+	e.HTMLFile = html
 
 	return e, e.readMD()
+}
+
+func inferHTMLFilePath(b *blog, md string) (string, error) {
+	rel, err := filepath.Rel(b.BaseDirectory, md)
+	if err != nil {
+		return "", err
+	}
+
+	bs := filepath.Base(rel)
+	fn := fmt.Sprintf("%s.html", bs[:len(bs)-len(".md")])
+	out := filepath.Join(b.OutputDirectory, filepath.Dir(rel), fn)
+
+	return out, nil
 }
 
 func (e *entry) parseHeader(ctx parser.Context) error {

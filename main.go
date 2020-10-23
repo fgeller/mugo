@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 )
 
@@ -18,9 +19,11 @@ func main() {
 }
 
 type config struct {
-	Title         string `json:"title"`
-	BaseDirectory string `json:"base-directory"`
-	BaseURL       string `json:"base-url"`
+	Title           string   `json:"title"`
+	BaseDirectory   string   `json:"base-directory"`
+	OutputDirectory string   `json:"output-directory"`
+	OutputExcludes  []string `json:"output-excludes"`
+	BaseURL         string   `json:"base-url"`
 
 	SitemapFile string `json:"sitemap-file"`
 
@@ -81,6 +84,8 @@ func readConfig() (*config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("read config: %+v\n", result)
 
 	return result, nil
 }

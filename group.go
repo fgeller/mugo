@@ -45,7 +45,7 @@ func (g *group) renderIndex() error {
 		return fmt.Errorf("failed to execute group index template: %w", err)
 	}
 
-	fp := filepath.Join(g.Blog.BaseDirectory, g.Name, g.HTMLFileName())
+	fp := filepath.Join(g.Blog.OutputDirectory, g.Name, g.HTMLFileName())
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write group index file: %w", err)

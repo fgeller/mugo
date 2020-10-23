@@ -49,7 +49,7 @@ func (t *tag) renderIndex() error {
 		return fmt.Errorf("failed to execute tag index template: %w", err)
 	}
 
-	fp := filepath.Join(t.Blog.BaseDirectory, t.HTMLFileName())
+	fp := filepath.Join(t.Blog.OutputDirectory, t.HTMLFileName())
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write tag index file: %w", err)
