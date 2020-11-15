@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -29,11 +30,11 @@ func newTag(b *blog, name string) *tag {
 }
 
 func (t *tag) URL() string {
-	return urlJoin(t.Blog.BaseURL, t.HTMLFileName())
+	return urlJoin(t.Blog.BaseURL, "tags", t.HTMLFileName())
 }
 
 func (t *tag) RelativeURL() string {
-	return urlJoin("/", t.HTMLFileName())
+	return urlJoin("/", "tags", t.HTMLFileName())
 }
 
 func (t *tag) HTMLFileName() string {
@@ -49,7 +50,13 @@ func (t *tag) renderIndex() error {
 		return fmt.Errorf("failed to execute tag index template: %w", err)
 	}
 
-	fp := filepath.Join(t.Blog.OutputDirectory, t.HTMLFileName())
+	tagDir := filepath.Join(t.Blog.OutputDirectory, "tags")
+	err = os.Mkdir(tagDir, 0770)
+	if !os.IsExist(err) {
+		return fmt.Errorf("failed to create tags directory [%s] err=%w", tagDir, err)
+	}
+
+	fp := filepath.Join(tagDir, t.HTMLFileName())
 	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
 	if err != nil {
 		return fmt.Errorf("failed to write tag index file: %w", err)
