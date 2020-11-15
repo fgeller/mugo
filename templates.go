@@ -14,13 +14,21 @@ type templates struct {
 	Entry *template.Template
 }
 
+func NowLayout(l string) string {
+	return time.Now().Format(l)
+}
+
 func NowFormatted() string {
 	return time.Now().Format(time.RFC3339)
 }
 
 func createTemplate(name, file, fallback string) (*template.Template, error) {
 	var raw string
-	funcs := template.FuncMap{"FormatDate": FormatDate, "Now": NowFormatted}
+	funcs := template.FuncMap{
+		"FormatDate": FormatDate,
+		"Now":        NowFormatted,
+		"NowLayout":  NowLayout,
+	}
 	if file == "" {
 		raw = fallback
 		verbose("template %#v uses fallback rather than file: %#v", name, file)
