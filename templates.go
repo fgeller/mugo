@@ -26,6 +26,7 @@ func createTemplate(name, file, fallback string) (*template.Template, error) {
 	var raw string
 	funcs := template.FuncMap{
 		"FormatDate": FormatDate,
+		"TimeLayout": TimeLayout,
 		"Now":        NowFormatted,
 		"NowLayout":  NowLayout,
 	}

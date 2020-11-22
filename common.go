@@ -46,3 +46,7 @@ func verbose(fs string, args ...interface{}) {
 func FormatDate(t time.Time) string {
 	return t.Format("2006-01-02")
 }
+
+func TimeLayout(t time.Time, l string) string {
+	return t.Format(l)
+}
