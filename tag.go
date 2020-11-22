@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type tag struct {
-	Name    string
-	Entries []*entry
-	Blog    *blog
+	Name     string
+	Entries  []*entry
+	Blog     *blog
+	Modified time.Time
 }
 
 func newTag(b *blog, name string) *tag {
@@ -25,6 +27,7 @@ func newTag(b *blog, name string) *tag {
 		}
 	}
 	sortByDate(t.Entries)
+	t.Modified = findLatestModified(t.Entries)
 
 	return t
 }

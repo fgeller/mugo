@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 )
 
 type group struct {
-	Name    string
-	Entries []*entry
-	Blog    *blog
+	Name     string
+	Entries  []*entry
+	Blog     *blog
+	Modified time.Time
 }
 
 func newGroup(b *blog, name string) *group {
@@ -21,6 +23,8 @@ func newGroup(b *blog, name string) *group {
 		}
 	}
 	sortByDate(g.Entries)
+	g.Modified = findLatestModified(g.Entries)
+
 	return g
 }
 

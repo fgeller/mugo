@@ -24,6 +24,20 @@ func fail(err error) {
 	}
 }
 
+func findLatestModified(es []*entry) time.Time {
+	if len(es) == 0 {
+		return time.Now()
+	}
+
+	lm := es[0].Modified
+	for _, e := range es {
+		if e.Modified.After(lm) {
+			lm = e.Modified
+		}
+	}
+	return lm
+}
+
 func urlJoin(args ...string) string {
 	result := args[0]
 	for i, u := range args {
