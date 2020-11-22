@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sort"
 	"time"
@@ -24,11 +25,12 @@ type entry struct {
 	MDFile   string
 	HTMLFile string
 
-	Title   string
-	Summary template.HTML
-	Posted  time.Time
-	Author  string
-	Tags    []string
+	Title    string
+	Summary  template.HTML
+	Posted   time.Time
+	Modified time.Time
+	Author   string
+	Tags     []string
 
 	RenderedHTML template.HTML
 
@@ -37,13 +39,35 @@ type entry struct {
 
 func newEntry(b *blog, md string) (*entry, error) {
 	e := &entry{MDFile: md, Blog: b}
+
 	html, err := inferHTMLFilePath(b, md)
 	if err != nil {
 		return nil, err
 	}
 	e.HTMLFile = html
 
+	err = e.readModified()
+	if err != nil {
+		return nil, err
+	}
+
 	return e, e.readMD()
+}
+
+func (e *entry) readModified() error {
+	mf, err := os.Open(e.MDFile)
+	if err != nil {
+		return err
+	}
+
+	st, err := mf.Stat()
+	if err != nil {
+		return err
+	}
+
+	e.Modified = st.ModTime()
+
+	return nil
 }
 
 func inferHTMLFilePath(b *blog, md string) (string, error) {
