@@ -24,6 +24,7 @@ type blog struct {
 	Config          *config
 
 	Entries []*entry
+	Tops    []*top
 	Groups  []*group
 	Tags    []*tag
 
@@ -57,6 +58,9 @@ func (b *blog) regenerate() error {
 
 	measure(b.readEntries, fail, "found entries in %vms.")
 	measure(b.writeEntries, fail, "rendered %v entries in %vms.", len(b.Entries))
+
+	measure(b.readTops, fail, "found tops in %vms.")
+	measure(b.writeTops, fail, "rendered %v tops in %vms.", len(b.Tops))
 
 	measure(b.findGroups, fail, "found groups in %vms.")
 	measure(b.renderGroups, fail, "rendered %v groups in %vms.", len(b.Groups))
@@ -382,6 +386,10 @@ func (b *blog) renderMainIndex() error {
 func (b *blog) readEntries() error {
 	mds := []string{}
 	walker := func(pth string, info os.FileInfo, err error) error {
+		if filepath.Dir(pth) == b.BaseDirectory { // skip base dir
+			log.Printf("skipping in base dir: %#v", pth)
+			return nil
+		}
 		if filepath.Ext(info.Name()) == ".md" {
 			mds = append(mds, pth)
 		}
@@ -405,7 +413,6 @@ func (b *blog) readEntries() error {
 	sortByDate(b.Entries)
 	return nil
 }
-
 func (b *blog) writeEntries() error {
 	for _, e := range b.Entries {
 		err := e.writeHTML()
@@ -414,6 +421,43 @@ func (b *blog) writeEntries() error {
 		}
 	}
 	sortByDate(b.Entries)
+	return nil
+}
+
+func (b *blog) readTops() error {
+	fs, err := ioutil.ReadDir(b.BaseDirectory)
+	if err != nil {
+		return err
+	}
+
+	mds := []string{}
+	for _, fi := range fs {
+		if filepath.Ext(fi.Name()) == ".md" {
+			pth := filepath.Join(b.BaseDirectory, fi.Name())
+			mds = append(mds, pth)
+			log.Printf("found top: %#v", pth)
+		}
+	}
+	verbose("scanned base-dir %#v and found %v md files.", b.BaseDirectory, len(mds))
+
+	b.Tops = make([]*top, 0, len(mds))
+	for _, md := range mds {
+		t, err := newTop(b, md)
+		if err != nil {
+			return err
+		}
+		b.Tops = append(b.Tops, t)
+	}
+	return nil
+}
+
+func (b *blog) writeTops() error {
+	for _, t := range b.Tops {
+		err := t.writeHTML()
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

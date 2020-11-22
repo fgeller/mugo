@@ -35,6 +35,7 @@ type config struct {
 
 type templatesConfig struct {
 	Main  string `json:"main"`
+	Top   string `json:"top"`
 	Group string `json:"group"`
 	Tags  string `json:"tags"`
 	Entry string `json:"entry"`

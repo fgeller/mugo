@@ -9,6 +9,7 @@ import (
 
 type templates struct {
 	Main  *template.Template
+	Top   *template.Template
 	Group *template.Template
 	Tags  *template.Template
 	Entry *template.Template
@@ -51,6 +52,11 @@ func readTemplates(cfg *templatesConfig) (*templates, error) {
 	result.Main, err = createTemplate("main", cfg.Main, tmplMain)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse main template: %w", err)
+	}
+
+	result.Top, err = createTemplate("top", cfg.Top, tmplTop)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse top template: %w", err)
 	}
 
 	result.Group, err = createTemplate("group", cfg.Group, tmplGroup)
@@ -167,6 +173,27 @@ var tmplMain = `
     </section>
 
   </body>
+</html>
+`
+
+var tmplTop = `
+<!doctype html>
+<html>
+<meta charset="UTF-8">
+  <head>
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+  </head>
+
+  <body>
+    <section class="main">
+      <h1>{{ .Title }}</h1>
+      <article>
+        {{ .RenderedHTML }}
+      </article>
+    </section>
+  </body>
+
 </html>
 `
 

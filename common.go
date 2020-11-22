@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -49,4 +50,17 @@ func FormatDate(t time.Time) string {
 
 func TimeLayout(t time.Time, l string) string {
 	return t.Format(l)
+}
+
+func inferHTMLFilePath(b *blog, md string) (string, error) {
+	rel, err := filepath.Rel(b.BaseDirectory, md)
+	if err != nil {
+		return "", err
+	}
+
+	bs := filepath.Base(rel)
+	fn := fmt.Sprintf("%s.html", bs[:len(bs)-len(".md")])
+	out := filepath.Join(b.OutputDirectory, filepath.Dir(rel), fn)
+
+	return out, nil
 }

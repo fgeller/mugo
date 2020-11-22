@@ -70,19 +70,6 @@ func (e *entry) readModified() error {
 	return nil
 }
 
-func inferHTMLFilePath(b *blog, md string) (string, error) {
-	rel, err := filepath.Rel(b.BaseDirectory, md)
-	if err != nil {
-		return "", err
-	}
-
-	bs := filepath.Base(rel)
-	fn := fmt.Sprintf("%s.html", bs[:len(bs)-len(".md")])
-	out := filepath.Join(b.OutputDirectory, filepath.Dir(rel), fn)
-
-	return out, nil
-}
-
 func (e *entry) parseHeader(ctx parser.Context) error {
 	header := meta.Get(ctx)
 	var err error
