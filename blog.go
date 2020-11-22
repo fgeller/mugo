@@ -51,29 +51,19 @@ func newBlog(cfg *config) *blog {
 }
 
 func (b *blog) regenerate() error {
-	// TODO drop measure
-	measure(b.readTemplates, fail, "read templates in %vms.")
-
-	measure(b.syncAssets, fail, "sync'd assets in %vms.")
-
-	measure(b.readEntries, fail, "found entries in %vms.")
-	measure(b.writeEntries, fail, "rendered %v entries in %vms.", len(b.Entries))
-
-	measure(b.readTops, fail, "found tops in %vms.")
-	measure(b.writeTops, fail, "rendered %v tops in %vms.", len(b.Tops))
-
-	measure(b.findGroups, fail, "found groups in %vms.")
-	measure(b.renderGroups, fail, "rendered %v groups in %vms.", len(b.Groups))
-
-	measure(b.findTags, fail, "found tags in %vms.")
-	measure(b.renderTags, fail, "rendered %v tags in %vms.", len(b.Tags))
-
-	measure(b.renderFeed, fail, "rendered feed in %vms.")
-
-	measure(b.renderMainIndex, fail, "rendered main index in %vms.")
-
-	measure(b.renderSitemap, fail, "rendered sitemap in %vms.")
-
+	fail(b.readTemplates())
+	fail(b.syncAssets())
+	fail(b.readEntries())
+	fail(b.writeEntries())
+	fail(b.readTops())
+	fail(b.writeTops())
+	fail(b.findGroups())
+	fail(b.renderGroups())
+	fail(b.findTags())
+	fail(b.renderTags())
+	fail(b.renderFeed())
+	fail(b.renderMainIndex())
+	fail(b.renderSitemap())
 	return nil
 }
 
