@@ -50,7 +50,7 @@ func (g *group) renderIndex() error {
 	}
 
 	fp := filepath.Join(g.Blog.OutputDirectory, g.Name, g.HTMLFileName())
-	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
+	err = ioutil.WriteFile(fp, buf.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write group index file: %w", err)
 	}

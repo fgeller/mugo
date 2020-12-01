@@ -195,7 +195,7 @@ func (e *entry) writeHTML() error {
 		return fmt.Errorf("failed to execute entry template: %w", err)
 	}
 
-	err = ioutil.WriteFile(e.HTMLFile, buf.Bytes(), 0777)
+	err = ioutil.WriteFile(e.HTMLFile, buf.Bytes(), 0644)
 	if err != nil {
 		return err
 	}

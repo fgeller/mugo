@@ -208,7 +208,7 @@ func (b *blog) renderSitemap() error {
 	}
 
 	fn := filepath.Join(b.OutputDirectory, b.Config.SitemapFile)
-	err = ioutil.WriteFile(fn, buf.Bytes(), 0755)
+	err = ioutil.WriteFile(fn, buf.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write %#v: %w", fn, err)
 	}
@@ -364,7 +364,7 @@ func (b *blog) renderMainIndex() error {
 	}
 
 	fp := filepath.Join(b.OutputDirectory, "index.html")
-	err = ioutil.WriteFile(fp, buf.Bytes(), 0777)
+	err = ioutil.WriteFile(fp, buf.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write main index file: %w", err)
 	}

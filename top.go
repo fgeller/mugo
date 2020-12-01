@@ -135,7 +135,7 @@ func (t *top) writeHTML() error {
 		return fmt.Errorf("failed to execute top template: %w", err)
 	}
 
-	err = ioutil.WriteFile(t.HTMLFile, buf.Bytes(), 0777)
+	err = ioutil.WriteFile(t.HTMLFile, buf.Bytes(), 0644)
 	if err != nil {
 		return err
 	}
