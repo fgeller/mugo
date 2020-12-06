@@ -51,15 +51,17 @@ func newBlog(cfg *config) *blog {
 }
 
 func (b *blog) regenerate() error {
-	fail(b.readTemplates())
 	fail(b.syncAssets())
+
+	fail(b.readTemplates())
 	fail(b.readEntries())
-	fail(b.writeEntries())
 	fail(b.readTops())
-	fail(b.writeTops())
 	fail(b.findGroups())
-	fail(b.renderGroups())
 	fail(b.findTags())
+
+	fail(b.writeTops())
+	fail(b.writeEntries())
+	fail(b.renderGroups())
 	fail(b.renderTags())
 	fail(b.renderFeed())
 	fail(b.renderMainIndex())
