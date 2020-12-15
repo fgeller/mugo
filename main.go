@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
+	"strings"
 )
 
 func main() {
@@ -29,8 +31,9 @@ type config struct {
 
 	ResolveRelativeLinks bool `json:"resolve-relative-links"`
 
-	Templates *templatesConfig `json:"templates"`
-	Feed      *feedConfig      `json:"feed"`
+	Templates   *templatesConfig `json:"templates"`
+	Feed        *feedConfig      `json:"feed"`
+	ExpandTilde bool             `json:"expand-tilde"`
 }
 
 type templatesConfig struct {
@@ -49,6 +52,32 @@ type feedConfig struct {
 	AuthorName  string `json:"author-name"`
 	AuthorEmail string `json:"author-email"`
 	Description string `json:"description"`
+}
+
+// dirty. i know.
+func (c *config) expandTilde() error {
+	if !c.ExpandTilde {
+		return nil
+	}
+
+	usr, err := user.Current()
+	if err != nil {
+		return err
+	}
+	expand := func(s *string) {
+		*s = strings.ReplaceAll(*s, "~", usr.HomeDir)
+	}
+	expand(&c.BaseDirectory)
+	expand(&c.OutputDirectory)
+	expand(&c.SitemapFile)
+	if c.Templates != nil {
+		expand(&c.Templates.Main)
+		expand(&c.Templates.Top)
+		expand(&c.Templates.Tags)
+		expand(&c.Templates.Group)
+		expand(&c.Templates.Entry)
+	}
+	return nil
 }
 
 func (c *config) validate() error {
@@ -82,6 +111,11 @@ func readConfig() (*config, error) {
 	}
 
 	err = result.validate()
+	if err != nil {
+		return nil, err
+	}
+
+	err = result.expandTilde()
 	if err != nil {
 		return nil, err
 	}
