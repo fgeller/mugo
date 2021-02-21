@@ -205,6 +205,14 @@ func (e *entry) writeHTML() error {
 }
 
 func sortByDate(entries []*entry) {
-	chrono := func(i, j int) bool { return entries[i].Posted.After(entries[j].Posted) }
+	chrono := func(i, j int) bool {
+		a, b := entries[i], entries[j]
+
+		if a.Posted.Equal(b.Posted) {
+			return a.Modified.After(b.Modified)
+		}
+
+		return a.Posted.After(b.Posted)
+	}
 	sort.Slice(entries, chrono)
 }
