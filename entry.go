@@ -84,9 +84,12 @@ func (e *entry) parseHeader(ctx parser.Context) error {
 		return fmt.Errorf("author is missing in %#v", e.MDFile)
 	}
 
-	e.Posted, err = time.Parse("2006-01-02", header["date"].(string))
+	e.Posted, err = time.Parse("2006-01-02 15:04", header["date"].(string))
 	if err != nil {
-		return fmt.Errorf("failed to parse header date in %#v: %w", e.MDFile, err)
+		e.Posted, err = time.Parse("2006-01-02", header["date"].(string))
+		if err != nil {
+			return fmt.Errorf("failed to parse header date in %#v: %w", e.MDFile, err)
+		}
 	}
 
 	e.Tags = []string{}
