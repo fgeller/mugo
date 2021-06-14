@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -156,7 +155,7 @@ func (e *entry) readMD() error {
 	ctx := parser.NewContext()
 	var buf bytes.Buffer
 
-	src, err := ioutil.ReadFile(e.MDFile)
+	src, err := os.ReadFile(e.MDFile)
 	if err != nil {
 		return err
 	}
@@ -195,7 +194,7 @@ func (e *entry) writeHTML() error {
 		return fmt.Errorf("failed to execute entry template: %w", err)
 	}
 
-	err = ioutil.WriteFile(e.HTMLFile, buf.Bytes(), 0644)
+	err = os.WriteFile(e.HTMLFile, buf.Bytes(), 0644)
 	if err != nil {
 		return err
 	}

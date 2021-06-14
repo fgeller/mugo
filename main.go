@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -99,7 +98,7 @@ func readConfig() (*config, error) {
 		return nil, err
 	}
 
-	bt, err := ioutil.ReadFile(cf)
+	bt, err := os.ReadFile(cf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %#v: %w", cf, err)
 	}

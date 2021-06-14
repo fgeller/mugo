@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -60,7 +59,7 @@ func (t *tag) renderIndex() error {
 	}
 
 	fp := filepath.Join(tagDir, t.HTMLFileName())
-	err = ioutil.WriteFile(fp, buf.Bytes(), 0644)
+	err = os.WriteFile(fp, buf.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write tag index file: %w", err)
 	}

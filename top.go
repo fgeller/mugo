@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -95,7 +94,7 @@ func (t *top) readMD() error {
 	ctx := parser.NewContext()
 	var buf bytes.Buffer
 
-	src, err := ioutil.ReadFile(t.MDFile)
+	src, err := os.ReadFile(t.MDFile)
 	if err != nil {
 		return err
 	}
@@ -135,7 +134,7 @@ func (t *top) writeHTML() error {
 		return fmt.Errorf("failed to execute top template: %w", err)
 	}
 
-	err = ioutil.WriteFile(t.HTMLFile, buf.Bytes(), 0644)
+	err = os.WriteFile(t.HTMLFile, buf.Bytes(), 0644)
 	if err != nil {
 		return err
 	}

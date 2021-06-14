@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -66,6 +65,7 @@ func (b *blog) regenerate() error {
 	fail(b.renderFeed())
 	fail(b.renderMainIndex())
 	fail(b.renderSitemap())
+
 	return nil
 }
 
@@ -210,7 +210,7 @@ func (b *blog) renderSitemap() error {
 	}
 
 	fn := filepath.Join(b.OutputDirectory, b.Config.SitemapFile)
-	err = ioutil.WriteFile(fn, buf.Bytes(), 0644)
+	err = os.WriteFile(fn, buf.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write %#v: %w", fn, err)
 	}
@@ -366,7 +366,7 @@ func (b *blog) renderMainIndex() error {
 	}
 
 	fp := filepath.Join(b.OutputDirectory, "index.html")
-	err = ioutil.WriteFile(fp, buf.Bytes(), 0644)
+	err = os.WriteFile(fp, buf.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write main index file: %w", err)
 	}
@@ -417,7 +417,7 @@ func (b *blog) writeEntries() error {
 }
 
 func (b *blog) readTops() error {
-	fs, err := ioutil.ReadDir(b.BaseDirectory)
+	fs, err := os.ReadDir(b.BaseDirectory)
 	if err != nil {
 		return err
 	}

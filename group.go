@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -50,7 +50,7 @@ func (g *group) renderIndex() error {
 	}
 
 	fp := filepath.Join(g.Blog.OutputDirectory, g.Name, g.HTMLFileName())
-	err = ioutil.WriteFile(fp, buf.Bytes(), 0644)
+	err = os.WriteFile(fp, buf.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write group index file: %w", err)
 	}

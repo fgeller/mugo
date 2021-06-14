@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"os"
 	"time"
 )
 
@@ -35,7 +35,7 @@ func createTemplate(name, file, fallback string) (*template.Template, error) {
 		raw = fallback
 		verbose("template %#v uses fallback rather than file: %#v", name, file)
 	} else {
-		byt, err := ioutil.ReadFile(file)
+		byt, err := os.ReadFile(file)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read %v template: %w", name, err)
 		}
