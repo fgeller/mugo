@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gorilla/feeds"
@@ -22,10 +23,11 @@ type blog struct {
 	BaseURL         string
 	Config          *config
 
-	Entries []*entry
-	Tops    []*top
-	Groups  []*group
-	Tags    []*tag
+	Entries      []*entry
+	DraftEntries []*entry
+	Tops         []*top
+	Groups       []*group
+	Tags         []*tag
 
 	templates *templates
 }
@@ -60,6 +62,7 @@ func (b *blog) regenerate() error {
 
 	fail(b.writeTops())
 	fail(b.writeEntries())
+	fail(b.writeDraftEntries())
 	fail(b.renderGroups())
 	fail(b.renderTags())
 	fail(b.renderFeed())
@@ -395,11 +398,18 @@ func (b *blog) readEntries() error {
 
 	b.Entries = make([]*entry, 0, len(mds))
 	for _, md := range mds {
+
 		e, err := newEntry(b, md)
 		if err != nil {
 			return err
 		}
-		b.Entries = append(b.Entries, e)
+
+		isDraft := strings.Contains(filepath.ToSlash(md), "/draft/")
+		if isDraft {
+			b.DraftEntries = append(b.DraftEntries, e)
+		} else {
+			b.Entries = append(b.Entries, e)
+		}
 	}
 
 	sortByDate(b.Entries)
@@ -413,6 +423,17 @@ func (b *blog) writeEntries() error {
 		}
 	}
 	sortByDate(b.Entries)
+	return nil
+}
+
+func (b *blog) writeDraftEntries() error {
+	for _, e := range b.DraftEntries {
+		err := e.writeHTML()
+		if err != nil {
+			return err
+		}
+	}
+	sortByDate(b.DraftEntries)
 	return nil
 }
 
